@@ -2,10 +2,10 @@
 
 set -euo pipefail
 
-# TODO: Ensure this is the correct GitHub homepage where releases can be downloaded for wasm4.
 GH_REPO="https://github.com/aduros/wasm4"
+CLI_NAME="w4"
 TOOL_NAME="wasm4"
-TOOL_TEST="w4 --help"
+TOOL_TEST="$CLI_NAME --help"
 
 fail() {
   echo -e "asdf-$TOOL_NAME: $*"
@@ -31,18 +31,21 @@ list_github_tags() {
 }
 
 list_all_versions() {
-  # TODO: Adapt this. By default we simply list the tag names from GitHub releases.
-  # Change this function if wasm4 has other means of determining installable versions.
   list_github_tags
 }
 
 download_release() {
-  local version filename url
+  local version filename platform url
   version="$1"
   filename="$2"
 
-  # TODO: Adapt the release URL convention for wasm4
-  url="$GH_REPO/archive/v${version}.tar.gz"
+  case "$OSTYPE" in
+  darwin*) platform="mac" ;;
+  linux*) platform="linux" ;;
+  *) fail "Unsupported platform" ;;
+  esac
+
+  url="$GH_REPO/releases/download/v${version}/${CLI_NAME}-${platform}.zip"
 
   echo "* Downloading $TOOL_NAME release $version..."
   curl "${curl_opts[@]}" -o "$filename" -C - "$url" || fail "Could not download $url"
@@ -61,7 +64,6 @@ install_version() {
     mkdir -p "$install_path"
     cp -r "$ASDF_DOWNLOAD_PATH"/* "$install_path"
 
-    # TODO: Assert wasm4 executable exists.
     local tool_cmd
     tool_cmd="$(echo "$TOOL_TEST" | cut -d' ' -f1)"
     test -x "$install_path/$tool_cmd" || fail "Expected $install_path/$tool_cmd to be executable."
